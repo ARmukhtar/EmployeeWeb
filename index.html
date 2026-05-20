@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EmployeeApp Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #070707;
+      --surface: #0f0f0f;
+      --surface2: #161616;
+      --surface3: #1e1e1e;
+      --accent: #c8f04c;
+      --accent-dim: rgba(200,240,76,0.1);
+      --accent-border: rgba(200,240,76,0.25);
+      --red: #ff4d6d;
+      --red-dim: rgba(255,77,109,0.1);
+      --blue: #4d9fff;
+      --blue-dim: rgba(77,159,255,0.1);
+      --text: #efefed;
+      --text-muted: #666;
+      --text-dim: #444;
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.1);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+      --sidebar-w: 240px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; overflow-x: hidden; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 50; transition: transform 0.3s ease;
+    }
+    .sidebar-logo {
+      padding: 1.5rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo .logo-mark {
+      font-family: var(--font-head); font-weight: 800; font-size: 1.2rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px; background: var(--accent); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #070707; font-size: 0.85rem; font-weight: 700;
+    }
+    .logo-text span { color: var(--accent); }
+    .sidebar-nav { flex: 1; padding: 1rem 0.75rem; display: flex; flex-direction: column; gap: 2px; }
+    .nav-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); padding: 0.5rem 0.75rem; margin-top: 0.5rem; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0.65rem 0.75rem; border-radius: var(--radius-sm);
+      font-size: 0.88rem; font-weight: 500; color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s ease; border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item i { width: 16px; text-align: center; font-size: 0.85rem; }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+    .nav-item .badge {
+      margin-left: auto; background: var(--accent); color: #070707;
+      font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 50px;
+    }
+    .sidebar-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem; color: var(--text-dim);
+    }
+    .api-status { display: flex; align-items: center; gap: 6px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); }
+    .status-dot.connected { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .status-dot.error { background: var(--red); }
+
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    .topbar {
+      padding: 1rem 2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); position: sticky; top: 0; z-index: 40;
+    }
+    .topbar-title { font-family: var(--font-head); font-size: 1rem; font-weight: 700; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .api-url-input {
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 7px 12px;
+      color: var(--text); font-family: var(--font-mono); font-size: 0.78rem;
+      width: 280px; outline: none; transition: border 0.2s;
+    }
+    .api-url-input:focus { border-color: var(--accent-border); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: var(--radius-sm); border: none;
+      font-family: var(--font-body); font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-accent { background: var(--accent); color: #070707; }
+    .btn-accent:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+    .btn-ghost:hover { border-color: var(--border2); background: var(--surface3); }
+    .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,77,109,0.2); }
+    .btn-danger:hover { background: rgba(255,77,109,0.2); }
+    .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+
+    /* ── PAGES ── */
+    .page { display: none; padding: 2rem; flex: 1; animation: fadeIn 0.3s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── STATS ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.4rem 1.5rem;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--border2); }
+    .stat-card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .stat-card-value { font-family: var(--font-head); font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .stat-card-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+    .stat-card.accent .stat-card-value { color: var(--accent); }
+    .stat-card.red .stat-card-value { color: var(--red); }
+    .stat-card.blue .stat-card-value { color: var(--blue); }
+
+    /* ── SECTION HEADER ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.75rem; }
+    .section-title { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+
+    /* ── TABLE ── */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .table-search { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; gap: 10px; }
+    .search-input {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 12px;
+      color: var(--text); font-family: var(--font-body); font-size: 0.88rem; outline: none;
+      transition: border 0.2s;
+    }
+    .search-input:focus { border-color: var(--accent-border); }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 0.75rem 1.2rem; text-align: left;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-muted); border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td { padding: 0.9rem 1.2rem; font-size: 0.88rem; color: var(--text); }
+    .td-mono { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); }
+    .td-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 50px; font-size: 0.72rem; font-weight: 600;
+    }
+    .td-badge.green { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+    .td-badge.blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(77,159,255,0.25); }
+    .table-actions { display: flex; gap: 6px; }
+    .empty-state { padding: 4rem; text-align: center; color: var(--text-muted); }
+    .empty-state i { font-size: 2.5rem; opacity: 0.2; margin-bottom: 1rem; display: block; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ── FORMS ── */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+    .form-card-title { font-family: var(--font-head); font-size: 1rem; font-weight: 700; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 8px; }
+    .form-card-title i { color: var(--accent); }
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
+    .form-input, .form-select {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 9px 12px;
+      color: var(--text); font-family: var(--font-body); font-size: 0.9rem;
+      outline: none; transition: border 0.2s; appearance: none;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--accent-border); box-shadow: 0 0 0 3px rgba(200,240,76,0.05); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-actions { display: flex; gap: 8px; margin-top: 1.2rem; }
+
+    /* ── TOAST ── */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
+    .toast {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 12px 16px;
+      font-size: 0.88rem; font-weight: 500; display: flex; align-items: center; gap: 10px;
+      min-width: 260px; animation: slideIn 0.3s ease;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .toast.success { border-color: var(--accent-border); }
+    .toast.success i { color: var(--accent); }
+    .toast.error { border-color: rgba(255,77,109,0.3); }
+    .toast.error i { color: var(--red); }
+    .toast.info i { color: var(--blue); }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200;
+      display: none; align-items: center; justify-content: center; padding: 1rem;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 520px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .modal-title { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+    .modal-close:hover { color: var(--text); }
+
+    /* ── LOADER ── */
+    .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── DETAIL CARD ── */
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .detail-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 1rem; }
+    .detail-item-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; }
+    .detail-item-value { font-family: var(--font-mono); font-size: 0.92rem; color: var(--text); font-weight: 500; }
+    .detail-item-value.accent { color: var(--accent); }
+
+    /* ── MOBILE ── */
+    .mobile-toggle { display: none; background: none; border: none; color: var(--text); font-size: 1.2rem; cursor: pointer; }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .mobile-toggle { display: flex; }
+      .api-url-input { width: 160px; }
+      .form-row { grid-template-columns: 1fr; }
+      .topbar { padding: 1rem; }
+      .page { padding: 1rem; }
+    }
+
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 49; }
+    .overlay.open { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">EA</div>
+      <span class="logo-text">Employee<span>App</span></span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Overview</div>
+    <button class="nav-item active" onclick="showPage('dashboard')">
+      <i class="fa-solid fa-gauge-high"></i> Dashboard
+    </button>
+
+    <div class="nav-label">Manage</div>
+    <button class="nav-item" onclick="showPage('employees')">
+      <i class="fa-solid fa-users"></i> Employees
+      <span class="badge" id="emp-count">0</span>
+    </button>
+    <button class="nav-item" onclick="showPage('departments')">
+      <i class="fa-solid fa-building"></i> Departments
+    </button>
+
+    <div class="nav-label">Actions</div>
+    <button class="nav-item" onclick="showPage('add-employee')">
+      <i class="fa-solid fa-user-plus"></i> Add Employee
+    </button>
+    <button class="nav-item" onclick="showPage('add-department')">
+      <i class="fa-solid fa-plus"></i> Add Department
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="api-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Not connected</span>
+    </div>
+  </div>
+</aside>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+      <span class="topbar-title" id="page-title">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <input type="text" class="api-url-input" id="api-base-url" value="https://employeeproject-ojur.onrender.com
+      " placeholder="http://localhost:8081">
+      <button class="btn btn-ghost btn-sm" onclick="refreshAll()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD PAGE -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card accent">
+        <div class="stat-card-label">Total Employees</div>
+        <div class="stat-card-value" id="stat-employees">—</div>
+        <div class="stat-card-sub">across all departments</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-card-label">Departments</div>
+        <div class="stat-card-value" id="stat-departments">—</div>
+        <div class="stat-card-sub">registered teams</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Avg Salary</div>
+        <div class="stat-card-value" id="stat-avg-salary">—</div>
+        <div class="stat-card-sub">monthly (before tax)</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-card-label">Avg Tax Rate</div>
+        <div class="stat-card-value" id="stat-avg-tax">—</div>
+        <div class="stat-card-sub">average deduction</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Recent Employees</div>
+      <button class="btn btn-ghost btn-sm" onclick="showPage('employees')">View All <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Email</th><th>Dept ID</th><th>Salary</th><th>Balance</th>
+          </tr>
+        </thead>
+        <tbody id="recent-emp-body">
+          <tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-circle-notch fa-spin"></i><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EMPLOYEES PAGE -->
+  <div class="page" id="page-employees">
+    <div class="section-header">
+      <div class="section-title">All Employees</div>
+      <button class="btn btn-accent btn-sm" onclick="showPage('add-employee')">
+        <i class="fa-solid fa-plus"></i> Add Employee
+      </button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-search">
+        <input type="text" class="search-input" placeholder="Search by name or email..." oninput="filterEmployees(this.value)">
+        <button class="btn btn-ghost btn-sm" onclick="loadEmployees()"><i class="fa-solid fa-rotate"></i></button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Email</th><th>Dept ID</th><th>YOE</th><th>Salary</th><th>Tax</th><th>Balance</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="emp-table-body">
+          <tr><td colspan="9"><div class="empty-state"><i class="fa-solid fa-circle-notch fa-spin"></i><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DEPARTMENTS PAGE -->
+  <div class="page" id="page-departments">
+    <div class="section-header">
+      <div class="section-title">All Departments</div>
+      <button class="btn btn-accent btn-sm" onclick="showPage('add-department')">
+        <i class="fa-solid fa-plus"></i> Add Department
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Department Name</th><th>Head of Department</th><th>Staff Count</th></tr>
+        </thead>
+        <tbody id="dept-table-body">
+          <tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-circle-notch fa-spin"></i><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADD EMPLOYEE PAGE -->
+  <div class="page" id="page-add-employee">
+    <div class="section-header">
+      <div class="section-title">Add New Employee</div>
+    </div>
+    <div class="form-card" style="max-width:640px;">
+      <div class="form-card-title"><i class="fa-solid fa-user-plus"></i> Employee Details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" class="form-input" id="new-fname" placeholder="John">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" class="form-input" id="new-lname" placeholder="Doe">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" id="new-email" placeholder="john@example.com">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Age</label>
+          <input type="number" class="form-input" id="new-age" placeholder="25">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Years of Experience</label>
+          <input type="number" class="form-input" id="new-yoe" placeholder="3">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Department ID</label>
+        <input type="number" class="form-input" id="new-dept" placeholder="1">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-accent" onclick="createEmployee()" id="create-emp-btn">
+          <i class="fa-solid fa-user-plus"></i> Create Employee
+        </button>
+        <button class="btn btn-ghost" onclick="showPage('employees')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD DEPARTMENT PAGE -->
+  <div class="page" id="page-add-department">
+    <div class="section-header">
+      <div class="section-title">Add New Department</div>
+    </div>
+    <div class="form-card" style="max-width:480px;">
+      <div class="form-card-title"><i class="fa-solid fa-building"></i> Department Details</div>
+      <div class="form-group">
+        <label class="form-label">Department Name</label>
+        <input type="text" class="form-input" id="new-dept-name" placeholder="Engineering">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Head of Department</label>
+        <input type="text" class="form-input" id="new-dept-head" placeholder="Jane Smith">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Initial Staff Count</label>
+        <input type="number" class="form-input" id="new-dept-staff" placeholder="0" value="0">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-accent" onclick="createDepartment()" id="create-dept-btn">
+          <i class="fa-solid fa-plus"></i> Create Department
+        </button>
+        <button class="btn btn-ghost" onclick="showPage('departments')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EMPLOYEE DETAIL MODAL -->
+<div class="modal-overlay" id="emp-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Employee Details</span>
+      <button class="modal-close" onclick="closeModal('emp-modal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="modal-content">Loading...</div>
+  </div>
+</div>
+
+<!-- EDIT EMPLOYEE MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit Employee</span>
+      <button class="modal-close" onclick="closeModal('edit-modal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">First Name</label>
+        <input type="text" class="form-input" id="edit-fname">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name</label>
+        <input type="text" class="form-input" id="edit-lname">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="edit-email">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Age</label>
+        <input type="number" class="form-input" id="edit-age">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Years of Experience</label>
+        <input type="number" class="form-input" id="edit-yoe">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Department ID</label>
+      <input type="number" class="form-input" id="edit-dept-id">
+    </div>
+    <input type="hidden" id="edit-emp-id">
+    <div class="form-actions">
+      <button class="btn btn-accent" onclick="updateEmployee()" id="update-btn">
+        <i class="fa-solid fa-save"></i> Save Changes
+      </button>
+      <button class="btn btn-ghost" onclick="closeModal('edit-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<script>
+  // ── STATE ──
+  let allEmployees = [];
+  let allDepartments = [];
+
+  // ── API ──
+  function getBase() {
+    return document.getElementById('api-base-url').value.trim().replace(/\/$/, '');
+  }
+
+  async function apiFetch(path, options = {}) {
+    const url = getBase() + path;
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    return text ? JSON.parse(text) : {};
+  }
+
+  // ── NAVIGATION ──
+  const pageTitles = {
+    dashboard: 'Dashboard', employees: 'Employees', departments: 'Departments',
+    'add-employee': 'Add Employee', 'add-department': 'Add Department'
+  };
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.getElementById('page-title').textContent = pageTitles[id] || id;
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
+    });
+    closeSidebar();
+    if (id === 'employees') loadEmployees();
+    if (id === 'departments') loadDepartments();
+    if (id === 'dashboard') loadDashboard();
+  }
+
+  // ── SIDEBAR ──
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+  }
+
+  // ── MODALS ──
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  // ── TOAST ──
+  function toast(msg, type = 'success') {
+    const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' };
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<i class="fa-solid ${icons[type]}"></i> ${msg}`;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ── STATUS ──
+  function setStatus(connected) {
+    const dot = document.getElementById('status-dot');
+    const txt = document.getElementById('status-text');
+    dot.className = 'status-dot ' + (connected ? 'connected' : 'error');
+    txt.textContent = connected ? 'API connected' : 'Not connected';
+  }
+
+  // ── FORMAT ──
+  const fmt = n => n != null ? `₦${Number(n).toLocaleString()}` : '—';
+  const pct = n => n != null ? `${(n * 100).toFixed(0)}%` : '—';
+
+  // ── LOAD EMPLOYEES ──
+  async function loadEmployees() {
+    const tbody = document.getElementById('emp-table-body');
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="loader"></div></div></td></tr>`;
+    try {
+      const data = await apiFetch('/api/getEmployees');
+      allEmployees = Array.isArray(data) ? data : [];
+      document.getElementById('emp-count').textContent = allEmployees.length;
+      renderEmployees(allEmployees);
+      setStatus(true);
+    } catch (e) {
+      setStatus(false);
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Could not load employees. Check your API URL.</p></div></td></tr>`;
+    }
+  }
+
+  function renderEmployees(list) {
+    const tbody = document.getElementById('emp-table-body');
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fa-solid fa-users"></i><p>No employees found</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(e => `
+      <tr>
+        <td class="td-mono">#${e.id}</td>
+        <td><strong>${e.firstName} ${e.lastName}</strong></td>
+        <td class="td-mono">${e.email}</td>
+        <td><span class="td-badge blue">Dept ${e.departId}</span></td>
+        <td class="td-mono">${e.yoe}yr</td>
+        <td>${fmt(e.salary)}</td>
+        <td><span class="td-badge green">${pct(e.tax)}</span></td>
+        <td>${fmt(e.balance)}</td>
+        <td>
+          <div class="table-actions">
+            <button class="btn btn-ghost btn-sm" onclick="viewEmployee(${e.id})" title="View"><i class="fa-solid fa-eye"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="openEditModal(${e.id})" title="Edit"><i class="fa-solid fa-pen"></i></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function filterEmployees(q) {
+    const filtered = allEmployees.filter(e =>
+      `${e.firstName} ${e.lastName} ${e.email}`.toLowerCase().includes(q.toLowerCase())
+    );
+    renderEmployees(filtered);
+  }
+
+  // ── LOAD DEPARTMENTS ──
+  async function loadDepartments() {
+    const tbody = document.getElementById('dept-table-body');
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="loader"></div></div></td></tr>`;
+    try {
+      const data = await apiFetch('/api/getDepartments');
+      allDepartments = Array.isArray(data) ? data : [];
+      if (!allDepartments.length) {
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-building"></i><p>No departments yet. Create one first!</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = allDepartments.map(d => `
+        <tr>
+          <td class="td-mono">#${d.id}</td>
+          <td><strong>${d.name}</strong></td>
+          <td>${d.headOfDepartment || '—'}</td>
+          <td><span class="td-badge green">${d.numberOfStaff} staff</span></td>
+        </tr>
+      `).join('');
+      document.getElementById('stat-departments').textContent = allDepartments.length;
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Could not load departments.</p></div></td></tr>`;
+    }
+  }
+
+  // ── DASHBOARD ──
+  async function loadDashboard() {
+    try {
+      const data = await apiFetch('/api/getEmployees');
+      allEmployees = Array.isArray(data) ? data : [];
+      document.getElementById('stat-employees').textContent = allEmployees.length;
+      document.getElementById('emp-count').textContent = allEmployees.length;
+
+      if (allEmployees.length) {
+        const avgSal = allEmployees.reduce((s, e) => s + (e.salary || 0), 0) / allEmployees.length;
+        const avgTax = allEmployees.reduce((s, e) => s + (e.tax || 0), 0) / allEmployees.length;
+        document.getElementById('stat-avg-salary').textContent = fmt(avgSal);
+        document.getElementById('stat-avg-tax').textContent = pct(avgTax);
+      }
+
+      // Recent 5
+      const recent = allEmployees.slice(-5).reverse();
+      document.getElementById('recent-emp-body').innerHTML = recent.length ? recent.map(e => `
+        <tr>
+          <td><strong>${e.firstName} ${e.lastName}</strong></td>
+          <td class="td-mono">${e.email}</td>
+          <td><span class="td-badge blue">Dept ${e.departId}</span></td>
+          <td>${fmt(e.salary)}</td>
+          <td>${fmt(e.balance)}</td>
+        </tr>
+      `).join('') : `<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-users"></i><p>No employees yet</p></div></td></tr>`;
+
+      setStatus(true);
+    } catch (e) {
+      setStatus(false);
+      document.getElementById('recent-emp-body').innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-plug-circle-xmark"></i><p>Can't reach API. Check the URL above.</p></div></td></tr>`;
+    }
+
+    try {
+      const depts = await apiFetch('/api/getDepartments');
+      document.getElementById('stat-departments').textContent = Array.isArray(depts) ? depts.length : '—';
+    } catch (_) {}
+  }
+
+  // ── VIEW EMPLOYEE ──
+  async function viewEmployee(id) {
+    document.getElementById('modal-content').innerHTML = `<div style="text-align:center;padding:2rem;"><div class="loader"></div></div>`;
+    openModal('emp-modal');
+    try {
+      const data = await apiFetch(`/api/getEmployee/${id}`);
+      const emp = data.employee || data;
+      const dept = data.department;
+      document.getElementById('modal-content').innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;">
+          <div style="width:48px;height:48px;background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;color:var(--accent);">
+            ${(emp.firstName||'?')[0]}${(emp.lastName||'')[0]}
+          </div>
+          <div>
+            <div style="font-family:var(--font-head);font-weight:700;font-size:1.1rem;">${emp.firstName} ${emp.lastName}</div>
+            <div style="font-size:0.82rem;color:var(--text-muted);">${emp.email}</div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-item-label">Staff ID</div><div class="detail-item-value accent">soft2026${emp.id}</div></div>
+          <div class="detail-item"><div class="detail-item-label">Age</div><div class="detail-item-value">${emp.age}</div></div>
+          <div class="detail-item"><div class="detail-item-label">Experience</div><div class="detail-item-value">${emp.yoe} years</div></div>
+          <div class="detail-item"><div class="detail-item-label">Department</div><div class="detail-item-value">${dept ? dept.name : 'Dept #' + emp.departId}</div></div>
+          <div class="detail-item"><div class="detail-item-label">Salary</div><div class="detail-item-value accent">${fmt(emp.salary)}</div></div>
+          <div class="detail-item"><div class="detail-item-label">Tax Rate</div><div class="detail-item-value">${pct(emp.tax)}</div></div>
+          <div class="detail-item"><div class="detail-item-label">Balance</div><div class="detail-item-value accent">${fmt(emp.balance)}</div></div>
+          ${dept ? `<div class="detail-item"><div class="detail-item-label">Dept Head</div><div class="detail-item-value">${dept.headOfDepartment || '—'}</div></div>` : ''}
+        </div>
+      `;
+    } catch (e) {
+      document.getElementById('modal-content').innerHTML = `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Could not load employee details.</p></div>`;
+    }
+  }
+
+  // ── EDIT EMPLOYEE ──
+  function openEditModal(id) {
+    const emp = allEmployees.find(e => e.id === id);
+    if (!emp) return;
+    document.getElementById('edit-emp-id').value = emp.id;
+    document.getElementById('edit-fname').value = emp.firstName;
+    document.getElementById('edit-lname').value = emp.lastName;
+    document.getElementById('edit-email').value = emp.email;
+    document.getElementById('edit-age').value = emp.age;
+    document.getElementById('edit-yoe').value = emp.yoe;
+    document.getElementById('edit-dept-id').value = emp.departId;
+    openModal('edit-modal');
+  }
+
+  async function updateEmployee() {
+    const btn = document.getElementById('update-btn');
+    const id = document.getElementById('edit-emp-id').value;
+    btn.innerHTML = '<div class="loader"></div> Saving...';
+    btn.disabled = true;
+    try {
+      await apiFetch(`/api/updateEmployee/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          firstName: document.getElementById('edit-fname').value,
+          lastName: document.getElementById('edit-lname').value,
+          email: document.getElementById('edit-email').value,
+          age: +document.getElementById('edit-age').value,
+          yoe: +document.getElementById('edit-yoe').value,
+          departId: +document.getElementById('edit-dept-id').value
+        })
+      });
+      closeModal('edit-modal');
+      toast('Employee updated successfully!');
+      loadEmployees();
+    } catch (e) {
+      toast('Failed to update employee', 'error');
+    } finally {
+      btn.innerHTML = '<i class="fa-solid fa-save"></i> Save Changes';
+      btn.disabled = false;
+    }
+  }
+
+  // ── CREATE EMPLOYEE ──
+  async function createEmployee() {
+    const btn = document.getElementById('create-emp-btn');
+    const firstName = document.getElementById('new-fname').value.trim();
+    const lastName = document.getElementById('new-lname').value.trim();
+    const email = document.getElementById('new-email').value.trim();
+    const age = +document.getElementById('new-age').value;
+    const yoe = +document.getElementById('new-yoe').value;
+    const departId = +document.getElementById('new-dept').value;
+
+    if (!firstName || !lastName || !email || !age || !departId) {
+      toast('Please fill all fields', 'error'); return;
+    }
+
+    btn.innerHTML = '<div class="loader"></div> Creating...';
+    btn.disabled = true;
+    try {
+      await apiFetch('/api/newEmployee', {
+        method: 'POST',
+        body: JSON.stringify({ firstName, lastName, email, age, yoe, departId })
+      });
+      toast('Employee created successfully! 🎉');
+      ['new-fname','new-lname','new-email','new-age','new-yoe','new-dept'].forEach(id => document.getElementById(id).value = '');
+      showPage('employees');
+    } catch (e) {
+      toast('Failed to create employee. Check department ID exists.', 'error');
+    } finally {
+      btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Employee';
+      btn.disabled = false;
+    }
+  }
+
+  // ── CREATE DEPARTMENT ──
+  async function createDepartment() {
+    const btn = document.getElementById('create-dept-btn');
+    const name = document.getElementById('new-dept-name').value.trim();
+    const headOfDepartment = document.getElementById('new-dept-head').value.trim();
+    const numberOfStaff = +document.getElementById('new-dept-staff').value || 0;
+
+    if (!name) { toast('Department name is required', 'error'); return; }
+
+    btn.innerHTML = '<div class="loader"></div> Creating...';
+    btn.disabled = true;
+    try {
+      await apiFetch('/api/newDepartment', {
+        method: 'POST',
+        body: JSON.stringify({ name, headOfDepartment, numberOfStaff })
+      });
+      toast('Department created successfully! 🎉');
+      document.getElementById('new-dept-name').value = '';
+      document.getElementById('new-dept-head').value = '';
+      document.getElementById('new-dept-staff').value = '0';
+      showPage('departments');
+    } catch (e) {
+      toast('Failed to create department', 'error');
+    } finally {
+      btn.innerHTML = '<i class="fa-solid fa-plus"></i> Create Department';
+      btn.disabled = false;
+    }
+  }
+
+  // ── REFRESH ALL ──
+  function refreshAll() {
+    loadDashboard();
+    loadEmployees();
+    loadDepartments();
+    toast('Refreshed!', 'info');
+  }
+
+  // ── INIT ──
+  loadDashboard();
+</script>
+</body>
+</html>

@@ -79,7 +79,7 @@
     const tbody = document.getElementById('emp-table-body');
     tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="loader"></div></div></td></tr>`;
     try {
-      const data = await apiFetch('/api/getEmployees');
+      const data = await apiFetch('/api/allemployees');
       allEmployees = Array.isArray(data) ? data : [];
       document.getElementById('emp-count').textContent = allEmployees.length;
       renderEmployees(allEmployees);
@@ -151,7 +151,7 @@
   // ── DASHBOARD ──
   async function loadDashboard() {
     try {
-      const data = await apiFetch('/api/getEmployees');
+      const data = await apiFetch('/api/allemployees');
       allEmployees = Array.isArray(data) ? data : [];
       document.getElementById('stat-employees').textContent = allEmployees.length;
       document.getElementById('emp-count').textContent = allEmployees.length;
@@ -192,7 +192,7 @@
     document.getElementById('modal-content').innerHTML = `<div style="text-align:center;padding:2rem;"><div class="loader"></div></div>`;
     openModal('emp-modal');
     try {
-      const data = await apiFetch(`/api/getEmployee/${id}`);
+      const data = await apiFetch(`/api/employee/${id}`);
       const emp = data.employee || data;
       const dept = data.department;
       document.getElementById('modal-content').innerHTML = `

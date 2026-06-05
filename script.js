@@ -7,16 +7,37 @@
   //   return document.getElementById('api-base-url').value.trim().replace(/\/$/, '');
   // }
 
-  async function apiFetch(path, options = {}) {
-    const url = "https://employeeproject-ojur.onrender.com" + path;
+  // async function apiFetch(path, options = {}) {
+  //   const url = "https://employeeproject-ojur.onrender.com" + path;
+  //   const res = await fetch(url, {
+  //     headers: { 'Content-Type': 'application/json', ...options.headers },
+  //     ...options
+  //   });
+  //   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  //   const text = await res.text();
+  //   return text ? JSON.parse(text) : {};
+  // }
+
+async function apiFetch(path, options = {}) {
+  const url = "https://employeeproject-ojur.onrender.com" + path;
+  
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+  
+  try {
     const res = await fetch(url, {
+      ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers },
-      ...options
+      signal: controller.signal
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     return text ? JSON.parse(text) : {};
+  } finally {
+    clearTimeout(timeout);
   }
+}
+
 
   // ── NAVIGATION ──
   const pageTitles = {

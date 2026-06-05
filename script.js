@@ -1,37 +1,35 @@
- // ── STATE ──
+
+  // ── STATE ──
   let allEmployees = [];
   let allDepartments = [];
 
-
-
-async function apiFetch(path, options = {}) {
-  const url = "https://employeeproject-ojur.onrender.com" + path;
-  
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90000); // 90s
-  
-  try {
-    const res = await fetch(url, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      signal: controller.signal
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    return text ? JSON.parse(text) : {};
-  } catch (e) {
-    if (e.name === 'AbortError') {
-      console.warn('Server is waking up, please wait...');
+  // ── API ──
+  async function apiFetch(path, options = {}) {
+    const url = "https://employeeproject-ojur.onrender.com" + path;
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000); // 90s for Render cold start
+    
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+        signal: controller.signal
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      return text ? JSON.parse(text) : {};
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        console.warn('Server is waking up, please wait...');
+      } else {
+        console.error('API Error:', e.message);
+      }
+      throw e;
+    } finally {
+      clearTimeout(timeout);
     }
-    throw e;
-  } finally {
-    clearTimeout(timeout);
   }
-}
-
-
-}
-
 
   // ── NAVIGATION ──
   const pageTitles = {
@@ -101,7 +99,7 @@ async function apiFetch(path, options = {}) {
       setStatus(true);
     } catch (e) {
       setStatus(false);
-      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Could not load employees. Check your API URL.</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Could not load employees. Check console for details.</p></div></td></tr>`;
     }
   }
 
@@ -143,7 +141,8 @@ async function apiFetch(path, options = {}) {
     const tbody = document.getElementById('dept-table-body');
     tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="loader"></div></div></td></tr>`;
     try {
-      const data = await apiFetch('/api/getDepartments');
+      // ✅ FIXED: was '/api/getDepartments', now matches backend
+      const data = await apiFetch('/api/departments');
       allDepartments = Array.isArray(data) ? data : [];
       if (!allDepartments.length) {
         tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-building"></i><p>No departments yet. Create one first!</p></div></td></tr>`;
@@ -193,11 +192,12 @@ async function apiFetch(path, options = {}) {
       setStatus(true);
     } catch (e) {
       setStatus(false);
-      document.getElementById('recent-emp-body').innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-plug-circle-xmark"></i><p>Can't reach API. Check the URL above.</p></div></td></tr>`;
+      document.getElementById('recent-emp-body').innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-plug-circle-xmark"></i><p>Can't reach API. Check console for details.</p></div></td></tr>`;
     }
 
     try {
-      const depts = await apiFetch('/api/getDepartments');
+      // ✅ FIXED: was '/api/getDepartments', now matches backend
+      const depts = await apiFetch('/api/departments');
       document.getElementById('stat-departments').textContent = Array.isArray(depts) ? depts.length : '—';
     } catch (_) {}
   }
@@ -256,8 +256,9 @@ async function apiFetch(path, options = {}) {
     btn.innerHTML = '<div class="loader"></div> Saving...';
     btn.disabled = true;
     try {
-      await apiFetch(`/api/updateEmployee/${id}`, {
-        method: 'PUT',
+      // ✅ FIXED: was '/api/updateEmployee' with PUT, now matches backend
+      await apiFetch(`/api/updateemployee/${id}`, {
+        method: 'POST',
         body: JSON.stringify({
           firstName: document.getElementById('edit-fname').value,
           lastName: document.getElementById('edit-lname').value,
@@ -322,7 +323,8 @@ async function apiFetch(path, options = {}) {
     btn.innerHTML = '<div class="loader"></div> Creating...';
     btn.disabled = true;
     try {
-      await apiFetch('/api/newDepartment', {
+      // ✅ FIXED: was '/api/newDepartment', now matches backend
+      await apiFetch('/api/newdepartment', {
         method: 'POST',
         body: JSON.stringify({ name, headOfDepartment, numberOfStaff })
       });

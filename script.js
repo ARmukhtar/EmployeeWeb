@@ -3,12 +3,12 @@
   let allDepartments = [];
 
   // ── API ──
-  function getBase() {
-    return document.getElementById('api-base-url').value.trim().replace(/\/$/, '');
-  }
+  // function getBase() {
+  //   return document.getElementById('api-base-url').value.trim().replace(/\/$/, '');
+  // }
 
   async function apiFetch(path, options = {}) {
-    const url = getBase() + path;
+    const url = "https://employeeproject-ojur.onrender.com" + path;
     const res = await fetch(url, {
       headers: { 'Content-Type': 'application/json', ...options.headers },
       ...options

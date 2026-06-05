@@ -2,27 +2,13 @@
   let allEmployees = [];
   let allDepartments = [];
 
-  // ── API ──
-  // function getBase() {
-  //   return document.getElementById('api-base-url').value.trim().replace(/\/$/, '');
-  // }
 
-  // async function apiFetch(path, options = {}) {
-  //   const url = "https://employeeproject-ojur.onrender.com" + path;
-  //   const res = await fetch(url, {
-  //     headers: { 'Content-Type': 'application/json', ...options.headers },
-  //     ...options
-  //   });
-  //   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  //   const text = await res.text();
-  //   return text ? JSON.parse(text) : {};
-  // }
 
 async function apiFetch(path, options = {}) {
   const url = "https://employeeproject-ojur.onrender.com" + path;
   
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+  const timeout = setTimeout(() => controller.abort(), 90000); // 90s
   
   try {
     const res = await fetch(url, {
@@ -33,9 +19,40 @@ async function apiFetch(path, options = {}) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     return text ? JSON.parse(text) : {};
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      console.warn('Server is waking up, please wait...');
+    }
+    throw e;
   } finally {
     clearTimeout(timeout);
   }
+}
+async function apiFetch(path, options = {}) {
+  const url = "https://employeeproject-ojur.onrender.com" + path;
+  
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000); // 90s
+  
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      signal: controller.signal
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    return text ? JSON.parse(text) : {};
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      console.warn('Server is waking up, please wait...');
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 }
 
 
